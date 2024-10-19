@@ -1,0 +1,4 @@
+/Users/yanayalovska/CLionProjects/Lab3_sp/cmake-build-debug/CMakeFiles/Lab3_sp.dir
+/Users/yanayalovska/CLionProjects/Lab3_sp/cmake-build-debug/CMakeFiles/Tests.dir
+/Users/yanayalovska/CLionProjects/Lab3_sp/cmake-build-debug/CMakeFiles/edit_cache.dir
+/Users/yanayalovska/CLionProjects/Lab3_sp/cmake-build-debug/CMakeFiles/rebuild_cache.dir
