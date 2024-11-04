@@ -41,14 +41,14 @@
 				{
 					"directoryIndex" : 0,
 					"id" : "Lab3_sp::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-Lab3_sp-Debug-2c86605c184f5b790c5a.json",
+					"jsonFile" : "target-Lab3_sp-Debug-53786b7864a8fccbf0e3.json",
 					"name" : "Lab3_sp",
 					"projectIndex" : 0
 				},
 				{
 					"directoryIndex" : 0,
 					"id" : "Tests::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-Tests-Debug-7aea408ea87df09e8952.json",
+					"jsonFile" : "target-Tests-Debug-5c1b894c24f294e9f63c.json",
 					"name" : "Tests",
 					"projectIndex" : 0
 				}

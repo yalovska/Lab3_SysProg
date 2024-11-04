@@ -1,180 +1,173 @@
 #include "lexical_analyzer.h"
 #include <iostream>
 #include <vector>
-#include <cctype>
 #include <set>
+#include <cctype>
 
-// Множина зарезервованих слів
-std::set<std::string> reservedWords = {"mov", "add", "sub", "jmp"};
-
-std::vector<Token> analyzeWithFiniteAutomaton(const std::string &text) {
+std::vector<Token> analyzeWithAutomaton(const std::string &text) {
     std::vector<Token> tokens;
     std::string currentToken;
-    State currentState = START;
+    State currentState = State::START;
 
     for (size_t i = 0; i < text.length(); ++i) {
         char c = text[i];
 
         switch (currentState) {
-            case START:
+            case State::START:
                 if (isdigit(c)) {
-                    currentState = IN_NUMBER;
                     currentToken += c;
-                } else if (c == '0' && (i + 1 < text.length()) && (text[i + 1] == 'x' || text[i + 1] == 'X')) {
-                    currentState = IN_HEX_NUMBER;  // Шістнадцяткове число
-                    currentToken += c;
-                    i++;  // Пропускаємо 'x' або 'X'
+                    if (c == '0' && (i + 1 < text.length()) && (text[i + 1] == 'x' || text[i + 1] == 'X')) {
+                        currentState = State::IN_HEX_NUMBER;
+                        currentToken += text[++i];  // Додаємо 'x' і переходимо до шестнадцяткового числа
+                    } else {
+                        currentState = State::IN_NUMBER;
+                    }
                 } else if (isalpha(c)) {
-                    currentState = IN_IDENTIFIER;
                     currentToken += c;
-                } else if (c == '#') {  // Препроцесор
-                    currentState = IN_PREPROCESSOR;
+                    currentState = State::IN_IDENTIFIER;
+                } else if (c == '#') {
                     currentToken += c;
-                } else if (c == '/' && i + 1 < text.length() && text[i + 1] == '*') {  // Багаторядковий коментар
-                    currentState = IN_MULTILINE_COMMENT;
-                    currentToken += "/*";
-                    i++;  // Пропускаємо '*'
+                    currentState = State::IN_PREPROCESSOR;
+                } else if (c == '/' && i + 1 < text.length()) {
+                    if (text[i + 1] == '/') {
+                        currentToken += "//";
+                        currentState = State::IN_COMMENT;
+                        i++;
+                    } else if (text[i + 1] == '*') {
+                        currentToken += "/*";
+                        currentState = State::IN_MULTILINE_COMMENT;
+                        i++;
+                    }
                 } else if (c == '\"') {
-                    currentState = IN_STRING_CONSTANT;
                     currentToken += c;
-                } else if (c == '\'') {  // Символьна константа
-                    currentState = IN_CHAR_CONSTANT;
+                    currentState = State::IN_STRING_CONSTANT;
+                } else if (c == '\'') {
                     currentToken += c;
+                    currentState = State::IN_CHAR_CONSTANT;
                 } else if (c == '+' || c == '-' || c == '*' || c == '/') {
-                    tokens.push_back({std::string(1, c), OPERATOR});  // Оператор
-                } else if (c == ';') {  // Коментар або розділовий знак
-                    currentToken += c;
-                    currentState = IN_COMMENT;
+                    tokens.push_back({std::string(1, c), LexemeType::OPERATOR});
+                } else if (c == ',' || c == ';' || c == '.') {
+                    tokens.push_back({std::string(1, c), LexemeType::PUNCTUATION});
                 } else if (isspace(c)) {
                     // Пропускаємо пробіли
-                } else if (c == ',' || c == '.') {
-                    tokens.push_back({std::string(1, c), PUNCTUATION});  // Розділові знаки
                 } else {
-                    currentState = STATE_ERROR;
+                    currentState = State::STATE_ERROR;
                 }
                 break;
 
-            case IN_NUMBER:
+            case State::IN_NUMBER:
                 if (isdigit(c)) {
                     currentToken += c;
-                } else if (c == '.' && isdigit(text[i + 1])) {  // Десяткове дробове число
+                } else if (c == '.' && isdigit(text[i + 1])) {
                     currentToken += c;
-                    currentState = IN_FLOAT;  // Новий стан для чисел з плаваючою крапкою
+                    currentState = State::IN_FLOAT;
                 } else {
-                    tokens.push_back({currentToken, NUMBER_DECIMAL});
+                    tokens.push_back({currentToken, LexemeType::NUMBER_DECIMAL});
                     currentToken.clear();
-                    currentState = START;
-                    i--;  // Повертаємо символ назад для повторної обробки
+                    currentState = State::START;
+                    i--;  // Повертаємо один символ назад
                 }
                 break;
 
-            case IN_FLOAT:
+            case State::IN_FLOAT:
                 if (isdigit(c)) {
                     currentToken += c;
                 } else {
-                    tokens.push_back({currentToken, NUMBER_DECIMAL});
+                    tokens.push_back({currentToken, LexemeType::NUMBER_DECIMAL});
                     currentToken.clear();
-                    currentState = START;
-                    i--;  // Повертаємо символ назад для повторної обробки
+                    currentState = State::START;
+                    i--;
                 }
                 break;
 
-            case IN_HEX_NUMBER:
+            case State::IN_HEX_NUMBER:
                 if (isxdigit(c)) {
                     currentToken += c;
                 } else {
-                    tokens.push_back({currentToken, NUMBER_HEX});
+                    tokens.push_back({currentToken, LexemeType::NUMBER_HEX});
                     currentToken.clear();
-                    currentState = START;
-                    i--;  // Повертаємо символ назад
+                    currentState = State::START;
+                    i--;
                 }
                 break;
 
-            case IN_STRING_CONSTANT:
+            case State::IN_STRING_CONSTANT:
                 currentToken += c;
                 if (c == '\"') {
-                    tokens.push_back({currentToken, STRING_CONSTANT});
+                    tokens.push_back({currentToken, LexemeType::STRING_CONSTANT});
                     currentToken.clear();
-                    currentState = START;
+                    currentState = State::START;
                 }
                 break;
 
-            case IN_CHAR_CONSTANT:
+            case State::IN_CHAR_CONSTANT:
                 currentToken += c;
                 if (c == '\'') {
-                    tokens.push_back({currentToken, CHAR_CONSTANT});
+                    tokens.push_back({currentToken, LexemeType::CHAR_CONSTANT});
                     currentToken.clear();
-                    currentState = START;
+                    currentState = State::START;
                 }
                 break;
 
-            case IN_IDENTIFIER:
+            case State::IN_IDENTIFIER:
                 if (isalnum(c)) {
                     currentToken += c;
                 } else {
                     if (reservedWords.find(currentToken) != reservedWords.end()) {
-                        tokens.push_back({currentToken, RESERVED_WORD});
+                        tokens.push_back({currentToken, LexemeType::RESERVED_WORD});
                     } else {
-                        tokens.push_back({currentToken, IDENTIFIER});
+                        tokens.push_back({currentToken, LexemeType::IDENTIFIER});
                     }
                     currentToken.clear();
-                    currentState = START;
-                    i--;  // Повертаємо символ назад для повторної обробки
+                    currentState = State::START;
+                    i--;
                 }
                 break;
 
-            case IN_COMMENT:
+            case State::IN_COMMENT:
                 currentToken += c;
-                if (c == '\n') {  // Важливо правильно завершити коментар
-                    tokens.push_back({currentToken, COMMENT});
+                if (c == '\n') {
+                    tokens.push_back({currentToken, LexemeType::COMMENT});
                     currentToken.clear();
-                    currentState = START;
+                    currentState = State::START;
                 }
                 break;
 
-            case IN_MULTILINE_COMMENT:
+            case State::IN_MULTILINE_COMMENT:
                 currentToken += c;
-                if (c == '*' && i + 1 < text.length() && text[i + 1] == '/') {  // Закінчення багаторядкового коментаря
+                if (c == '*' && i + 1 < text.length() && text[i + 1] == '/') {
                     currentToken += '/';
-                    tokens.push_back({currentToken, COMMENT});
+                    tokens.push_back({currentToken, LexemeType::COMMENT});
                     currentToken.clear();
-                    currentState = START;
-                    i++;  // Пропускаємо '/'
-                } else if (i == text.length() - 1) {  // Якщо коментар не закінчився
-                    std::cerr << "Error: Unclosed multiline comment\n";
-                    currentState = STATE_ERROR;
+                    currentState = State::START;
+                    i++;
                 }
                 break;
 
-            case IN_PREPROCESSOR:
-                if (isalnum(c) || c == '_' || c == ' ' || c == '#' || c == '<' || c == '>' || c == '/' || c == '.') {
+            case State::IN_PREPROCESSOR:
+                if (isalnum(c) || c == '<' || c == '>' || c == ' ') {
                     currentToken += c;
                 } else {
-                    tokens.push_back({currentToken, PREPROCESSOR});
+                    tokens.push_back({currentToken, LexemeType::PREPROCESSOR});
                     currentToken.clear();
-                    currentState = START;
-                    i--;  // Повертаємо символ назад для повторної обробки
+                    currentState = State::START;
+                    i--;
                 }
                 break;
 
-            case STATE_ERROR:
+            case State::STATE_ERROR:
                 std::cerr << "Lexical error at character: " << c << "\n";
-                tokens.push_back({std::string(1, c), LEXEME_ERROR});
-                currentState = START;
+                tokens.push_back({std::string(1, c), LexemeType::LEXEME_ERROR});
+                currentState = State::START;
                 break;
-
-            default:
-                throw std::runtime_error("Unknown state detected!");
-
         }
     }
 
-    // Додаємо останній токен, якщо він існує
     if (!currentToken.empty()) {
         if (reservedWords.find(currentToken) != reservedWords.end()) {
-            tokens.push_back({currentToken, RESERVED_WORD});
+            tokens.push_back({currentToken, LexemeType::RESERVED_WORD});
         } else {
-            tokens.push_back({currentToken, IDENTIFIER});
+            tokens.push_back({currentToken, LexemeType::IDENTIFIER});
         }
     }
 

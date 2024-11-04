@@ -1,0 +1,9 @@
+mov ax, 10
+add bx, cx;
+#include <iostream>
+"This is a string constant"
+'c'
+0x1F
+3.14
+// single-line comment
+/* multi-line comment */

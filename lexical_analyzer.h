@@ -3,45 +3,47 @@
 
 #include <string>
 #include <vector>
+#include <set>
 
-// Оголошення типів лексем
-enum LexemeType {
-    NUMBER_DECIMAL,   // 0
-    NUMBER_HEX,       // 1
-    STRING_CONSTANT,  // 2
-    CHAR_CONSTANT,    // 3
-    COMMENT,          // 4
-    RESERVED_WORD,    // 5
-    OPERATOR,         // 6
-    PUNCTUATION,      // 7
-    IDENTIFIER,       // 8
-    LEXEME_ERROR,     // 9
-    PREPROCESSOR      // 10
-
+// Типи лексем
+enum class LexemeType {
+    NUMBER_DECIMAL,
+    NUMBER_HEX,
+    STRING_CONSTANT,
+    CHAR_CONSTANT,
+    COMMENT,
+    RESERVED_WORD,
+    OPERATOR,
+    PUNCTUATION,
+    IDENTIFIER,
+    LEXEME_ERROR,
+    PREPROCESSOR
 };
 
-// Стани для скінченого автомата
-enum State {
-    START,              // Початковий стан
-    IN_NUMBER,          // Стан для десяткових чисел
+enum class State {
+    START,
+    IN_NUMBER,
     IN_FLOAT,
-    IN_HEX_NUMBER,      // Стан для шістнадцяткових чисел
-    IN_STRING_CONSTANT, // Стан для рядкових констант
-    IN_CHAR_CONSTANT,   // Стан для символьних констант
-    IN_IDENTIFIER,      // Стан для ідентифікаторів
-    IN_COMMENT,         // Стан для однорядкових коментарів
-    IN_MULTILINE_COMMENT, // Стан для багаторядкових коментарів
-    IN_PREPROCESSOR,    // Стан для директив препроцесора
-    STATE_ERROR         // Стан для помилок
+    IN_HEX_NUMBER,
+    IN_STRING_CONSTANT,
+    IN_CHAR_CONSTANT,
+    IN_IDENTIFIER,
+    IN_COMMENT,
+    IN_MULTILINE_COMMENT,
+    IN_PREPROCESSOR,
+    STATE_ERROR
 };
 
-// Структура Token для зберігання лексем і їх типів
 struct Token {
     std::string value;
     LexemeType type;
 };
 
-// Функція для аналізу тексту
-std::vector<Token> analyzeWithFiniteAutomaton(const std::string &text);
+// Оголошення змінної reservedWords як extern
+extern std::set<std::string> reservedWords;
+
+// Оголошення функцій для аналізу тексту
+std::vector<Token> analyzeWithRegex(const std::string &text);
+std::vector<Token> analyzeWithAutomaton(const std::string &text);
 
 #endif // LEXICAL_ANALYZER_H
